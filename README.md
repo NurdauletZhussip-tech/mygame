@@ -27,6 +27,7 @@ Direct calls would create tight coupling between unrelated classes.
 Any class implementing `GameEventListener` can subscribe and react to events
 without `GameManager` knowing who is listening.
 ## Project Structure
+```
 core/src/main/java/game/mygame/
 ├── SpaceShooter.java              # ApplicationListener entry point
 ├── GameManager.java               # Singleton — global state + event hub
@@ -40,7 +41,7 @@ core/src/main/java/game/mygame/
 └── observer/
     ├── GameEventListener.java     # Observer interface
     └── GameEvent.java             # Event types enum
-
+```
 ## Progress
   - [x] Project setup
  - [x] Player movement + shooting
