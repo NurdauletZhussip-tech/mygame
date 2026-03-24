@@ -1,4 +1,8 @@
 package game.mygame.observer;
 
-public class GameEvent {
+public enum GameEvent {
+    SCORE_CHANGED,
+    LIFE_LOST,
+    GAME_OVER,
+    ENEMY_KILLED
 }

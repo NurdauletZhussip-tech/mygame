@@ -1,4 +1,5 @@
 package game.mygame.observer;
 
-public class GameEventListener {
+public interface GameEventListener {
+    void onGameEvent(GameEvent event);
 }
