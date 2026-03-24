@@ -4,6 +4,7 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 public class SpaceShooter extends Game {
+
     public SpriteBatch batch;
 
     @Override
@@ -15,5 +16,6 @@ public class SpaceShooter extends Game {
     @Override
     public void dispose() {
         batch.dispose();
+        super.dispose();
     }
 }

@@ -9,29 +9,46 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
 
+import com.badlogic.gdx.math.Rectangle;
 import game.mygame.entities.Bullet;
 import game.mygame.entities.Enemy;
 import game.mygame.entities.Player;
 import game.mygame.factory.EnemyFactory;
+import game.mygame.observer.GameEvent;
+import game.mygame.observer.GameEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class GameScreen implements Screen {
+import static game.mygame.observer.GameEvent.GAME_OVER;
+
+public class GameScreen implements Screen, GameEventListener {
+
     private final SpaceShooter game;
     private final SpriteBatch batch;
     private final OrthographicCamera camera;
 
-    private Texture playerTex, bulletTex, bgTex;
-    private Texture slowEnemyTex, fastEnemyTex, tankEnemyTex;
+    private Texture playerTex;
+    private Texture bulletTex;
+    private Texture bgTex;
+    private Texture slowEnemyTex;
+    private Texture fastEnemyTex;
+    private Texture tankEnemyTex;
+
 
     private Player player;
     private final List<Enemy> enemies = new ArrayList<>();
+
     private EnemyFactory enemyFactory;
 
     private BitmapFont font;
+
     private float spawnTimer = 0f;
     private float spawnInterval = 2.0f;
+
+    private String statusMessage = "";
+
+
 
     public GameScreen(SpaceShooter game) {
         this.game = game;
@@ -52,7 +69,7 @@ public class GameScreen implements Screen {
         font.setColor(Color.WHITE);
         font.getData().setScale(1.5f);
 
-        GameManager.getInstance().init();
+        GameManager.getInstance().addListener(this);
     }
 
     private void loadAssets() {
@@ -74,6 +91,7 @@ public class GameScreen implements Screen {
         batch.begin();
 
         batch.draw(bgTex, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+
         player.draw(batch);
         for (Enemy e : enemies) e.draw(batch);
 
@@ -85,6 +103,12 @@ public class GameScreen implements Screen {
             font.draw(batch, "GAME OVER",
                     Gdx.graphics.getWidth() / 2f - 100, Gdx.graphics.getHeight() / 2f);
             font.getData().setScale(1.5f);
+            font.draw(batch, "Final Score: " + gm.getScore(),
+                Gdx.graphics.getWidth() / 2f - 80, Gdx.graphics.getHeight() / 2f - 50);
+        }
+        if (!statusMessage.isEmpty()) {
+            font.draw(batch, statusMessage, Gdx.graphics.getWidth() / 2f - 60,
+                Gdx.graphics.getHeight() / 2f + 80);
         }
 
         batch.end();
@@ -103,23 +127,26 @@ public class GameScreen implements Screen {
         if (spawnTimer >= spawnInterval) {
             spawnTimer = 0f;
             float x = MathUtils.random(20f, Gdx.graphics.getWidth() - 80f);
+            float y = Gdx.graphics.getHeight() + 10f;
 
             int roll = MathUtils.random(2);
-            EnemyFactory.EnemyType type = roll == 0
-                    ? EnemyFactory.EnemyType.FAST
-                    : roll == 1
-                    ? EnemyFactory.EnemyType.TANK
-                    : EnemyFactory.EnemyType.SLOW;
+            EnemyFactory.EnemyType type;
+            if (roll == 0)      type = EnemyFactory.EnemyType.FAST;
+            else if (roll == 1) type = EnemyFactory.EnemyType.TANK;
+            else                type = EnemyFactory.EnemyType.SLOW;
 
-            enemies.add(enemyFactory.create(type, x, Gdx.graphics.getHeight() + 10f));
+            enemies.add(enemyFactory.create(type, x, y));
+
             spawnInterval = Math.max(0.5f, spawnInterval - 0.05f);
         }
     }
 
     private void checkCollisions() {
         GameManager gm = GameManager.getInstance();
+
         for (Enemy enemy : enemies) {
             if (!enemy.isAlive()) continue;
+
             for (Bullet bullet : player.getBullets()) {
                 if (!bullet.isAlive()) continue;
                 if (bullet.getBounds().overlaps(enemy.getBounds())) {
@@ -127,20 +154,43 @@ public class GameScreen implements Screen {
                     enemy.hit(1);
                     if (!enemy.isAlive()) {
                         gm.addScore(enemy.getScoreValue());
+                        gm.notify(GameEvent.ENEMY_KILLED);
                     }
                 }
             }
+            Rectangle playerBounds = player.getBounds();
             if (enemy.getBounds().overlaps(player.getBounds())) {
                 enemy.hit(999);
                 gm.loseLife();
             }
         }
     }
+    @Override
+    public void onGameEvent(GameEvent event) {
+        switch (event) {
+            case ENEMY_KILLED:
+                statusMessage = "+Score!";
+                break;
+            case LIFE_LOST:
+                statusMessage = "Ouch! Lives left: " + GameManager.getInstance().getLives();
+                break;
+            case GAME_OVER:
+                statusMessage = "";
+                break;
+            default:
+                break;
+        }
+    }
 
     @Override
     public void dispose() {
-        playerTex.dispose(); bulletTex.dispose(); bgTex.dispose();
-        slowEnemyTex.dispose(); fastEnemyTex.dispose(); tankEnemyTex.dispose();
+        GameManager.getInstance().removeListener(this);
+        playerTex.dispose();
+        bulletTex.dispose();
+        bgTex.dispose();
+        slowEnemyTex.dispose();
+        fastEnemyTex.dispose();
+        tankEnemyTex.dispose();
         font.dispose();
     }
 
