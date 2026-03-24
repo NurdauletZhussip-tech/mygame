@@ -9,7 +9,8 @@ public class SpaceShooter extends Game {
     @Override
     public void create() {
         batch = new SpriteBatch();
-        // TODO: add screens
+        GameManager.getInstance().init();
+        setScreen(new GameScreen(this));
     }
     @Override
     public void dispose() {
